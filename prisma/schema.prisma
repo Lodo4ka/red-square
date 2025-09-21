@@ -50,5 +50,6 @@ model RoundPlayer {
   userId Int
   round  Round @relation(fields: [roundId], references: [id])
   roundId Int
+  taps Int @default(0)
   @@unique([userId, roundId])
 }
