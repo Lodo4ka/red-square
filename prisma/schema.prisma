@@ -19,6 +19,12 @@ enum Role {
   nikita
 }
 
+enum Status {
+  active
+  finished
+  cooldown
+}
+
 model User {
   id        Int      @id @default(autoincrement())
   createdAt DateTime @default(now())
@@ -34,13 +40,13 @@ model Round {
   id        Int      @id @default(autoincrement())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  name      String
   startTime DateTime
   endTime DateTime
   admin User @relation("RoundAdmin", fields: [adminId], references: [id])
   adminId Int
   roundPlayers RoundPlayer[]
   totalScore Int @default(0)
+  status Status @default(cooldown)
 }
 
 model RoundPlayer {
