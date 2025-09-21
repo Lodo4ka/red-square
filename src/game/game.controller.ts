@@ -1,4 +1,4 @@
-import { Controller, Get, Body, Post } from '@nestjs/common';
+import { Controller, Get, Body, Post, Param } from '@nestjs/common';
 import { GameService } from './game.service';
 import { CreateRoundDto } from './dto/create-round.dto';
 
@@ -9,6 +9,11 @@ export class GameController {
   @Get()
   getAllRounds() {
     return this.gameService.getAllRounds();
+  }
+
+  @Get(':id')
+  getRound(@Param('id') id: string) {
+    return this.gameService.getRound(parseInt(id));
   }
 
   @Post()
