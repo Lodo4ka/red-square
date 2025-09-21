@@ -4,6 +4,7 @@ import { CreateRoundDto } from './dto/create-round.dto';
 import { ConfigService } from '@nestjs/config';
 import { toMilliseconds } from 'src/users/utils/date';
 import { Status } from '@prisma/client';
+import { JoinRoundDto } from './dto/join-round.dto';
 
 @Injectable()
 export class GameService {
@@ -66,4 +67,54 @@ export class GameService {
     }
     return round;
   }
+
+  async joinRound(joinRoundDto: JoinRoundDto) {
+    const round = await this.prisma.round.findUnique({
+      where: {
+        id: joinRoundDto.roundId,
+      },
+    });
+    if (!round) {
+      throw new NotFoundException('такой игры не существует');
+    }
+    const user = await this.prisma.user.findUnique({
+      where: {
+        id: joinRoundDto.userId,
+      },
+    });
+    if (!user) {
+      throw new NotFoundException('такого пользователя не существует');
+    }
+    return await this.prisma.round.update({
+      where: {
+        id: joinRoundDto.roundId,
+      },
+      data: {
+        roundPlayers: {
+          connectOrCreate: {
+            where: {
+              userId_roundId: {
+                userId: joinRoundDto.userId,
+                roundId: joinRoundDto.roundId,
+              },
+            },
+            create: { userId: joinRoundDto.userId },
+          },
+        },
+      },
+      include: { roundPlayers: true },
+    });
+  }
+
+  // async incrementTap(incrementTapDto: IncrementTapDto) {
+  //   return await this.prisma.roundPlayer.update({
+  //     where: {
+  //       userId_roundId: {
+  //         userId: incrementTapDto.userId,
+  //         roundId: incrementTapDto.roundId,
+  //       },
+  //     },
+  //     data: { taps: { increment: 1 } },
+  //   });
+  // }
 }
