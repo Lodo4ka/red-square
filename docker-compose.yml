@@ -27,6 +27,8 @@ services:
         condition: service_healthy
     command: sh -lc "npx prisma migrate deploy"
     restart: "no"
+    volumes:
+      - ./prisma/migrations:/app/prisma/migrations
 
   api-1:
     build: .
@@ -41,6 +43,8 @@ services:
         condition: service_healthy
       migrate:
         condition: service_completed_successfully
+    volumes:
+      - ./prisma/migrations:/app/prisma/migrations:rw
 
   api-2:
     build: .
@@ -55,6 +59,8 @@ services:
         condition: service_healthy
       migrate:
         condition: service_completed_successfully
+    volumes:
+      - ./prisma/migrations:/app/prisma/migrations:rw
 
   api-3:
     build: .
@@ -69,6 +75,8 @@ services:
         condition: service_healthy
       migrate:
         condition: service_completed_successfully
+    volumes:
+      - ./prisma/migrations:/app/prisma/migrations:rw
 
   nginx:
     image: nginx:1.27-alpine
