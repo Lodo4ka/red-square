@@ -9,8 +9,14 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+enum Role {
+  admin
+  survivor
+  nikita
 }
 
 model User {
@@ -19,4 +25,30 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   name      String
+  role      Role   @default(survivor)
+  adminRounds Round[] @relation("RoundAdmin")
+  roundPlayers RoundPlayer[]
+}
+
+model Round {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  name      String
+  startTime DateTime
+  endTime DateTime
+  admin User @relation("RoundAdmin", fields: [adminId], references: [id])
+  adminId Int
+  roundPlayers RoundPlayer[]
+  totalScore Int @default(0)
+}
+
+model RoundPlayer {
+  id     Int @id @default(autoincrement())
+  score  Int @default(0)
+  user   User @relation(fields: [userId], references: [id])
+  userId Int
+  round  Round @relation(fields: [roundId], references: [id])
+  roundId Int
+  @@unique([userId, roundId])
 }
