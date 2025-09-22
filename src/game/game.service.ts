@@ -3,7 +3,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateRoundDto } from './dto/create-round.dto';
 import { ConfigService } from '@nestjs/config';
 import { toMilliseconds } from 'src/users/utils/date';
-import { Status } from '@prisma/client';
+import { Prisma, Round, Status } from '@prisma/client';
 import { JoinRoundDto } from './dto/join-round.dto';
 import { IncrementTapDto } from './dto/increment-tap.dto';
 
@@ -13,6 +13,33 @@ export class GameService {
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
   ) {}
+
+  private computeExpectedStatus(
+    round: Pick<Round, 'startTime' | 'endTime'>,
+    now: Date = new Date(),
+  ): Status {
+    if (now < round.startTime) {
+      return Status.cooldown;
+    }
+    if (now >= round.endTime) {
+      return Status.finished;
+    }
+    return Status.active;
+  }
+
+  private async reconcileRoundStatus(
+    round: Round,
+    tx: Prisma.TransactionClient | PrismaService,
+  ): Promise<Round> {
+    const expected = this.computeExpectedStatus(round);
+    if (expected !== round.status) {
+      return await tx.round.update({
+        where: { id: round.id },
+        data: { status: expected },
+      });
+    }
+    return round;
+  }
 
   async createRound(createRoundDto: CreateRoundDto) {
     const admin = await this.prisma.user.findUnique({
@@ -54,7 +81,19 @@ export class GameService {
   }
 
   async getAllRounds() {
-    return this.prisma.round.findMany();
+    const rounds = await this.prisma.round.findMany();
+    const now = new Date();
+    const updates = rounds.map(async (r) => {
+      const expected = this.computeExpectedStatus(r, now);
+      if (expected !== r.status) {
+        return this.prisma.round.update({
+          where: { id: r.id },
+          data: { status: expected },
+        });
+      }
+      return r;
+    });
+    return Promise.all(updates);
   }
 
   async getRound(id: number) {
@@ -66,7 +105,7 @@ export class GameService {
     if (!round) {
       throw new NotFoundException('такой игры не существует');
     }
-    return round;
+    return this.reconcileRoundStatus(round, this.prisma);
   }
 
   async joinRound(joinRoundDto: JoinRoundDto) {
@@ -78,6 +117,7 @@ export class GameService {
     if (!round) {
       throw new NotFoundException('такой игры не существует');
     }
+    await this.reconcileRoundStatus(round, this.prisma);
     const user = await this.prisma.user.findUnique({
       where: {
         id: joinRoundDto.userId,
@@ -118,7 +158,8 @@ export class GameService {
       if (!currentRound) {
         throw new NotFoundException('такой игры не существует');
       }
-      if (currentRound.status !== Status.active) {
+      const reconciledRound = await this.reconcileRoundStatus(currentRound, tx);
+      if (reconciledRound.status !== Status.active) {
         throw new NotFoundException('игра не активна');
       }
       // 1) Сначала инкрементируем taps и получаем новое значение
