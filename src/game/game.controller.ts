@@ -1,8 +1,9 @@
-import { Controller, Get, Body, Post, Param } from '@nestjs/common';
+import { Controller, Get, Body, Post, Param, UseGuards } from '@nestjs/common';
 import { GameService } from './game.service';
 import { CreateRoundDto } from './dto/create-round.dto';
 import { JoinRoundDto } from './dto/join-round.dto';
 import { IncrementTapDto } from './dto/increment-tap.dto';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('game')
 export class GameController {
@@ -14,11 +15,13 @@ export class GameController {
   }
 
   @Post('/join')
+  @UseGuards(JwtAuthGuard)
   joinRound(@Body() joinRoundDto: JoinRoundDto) {
     return this.gameService.joinRound(joinRoundDto);
   }
 
   @Post('/tap')
+  @UseGuards(JwtAuthGuard)
   incrementTap(@Body() createRoundDto: IncrementTapDto) {
     return this.gameService.incrementTap(createRoundDto);
   }
@@ -29,6 +32,7 @@ export class GameController {
   }
 
   @Post()
+  @UseGuards(JwtAuthGuard)
   createRound(@Body() createRoundDto: CreateRoundDto) {
     return this.gameService.createRound(createRoundDto);
   }

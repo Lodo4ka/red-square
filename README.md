@@ -54,3 +54,37 @@ REST API - приемлемый вариант.
 Ожидаем чистый код с соблюдением SOLID, корректность API, отзывчивый фронтенд.
 
 https://github.com/round-squares/tech-task-for-interview/wiki
+
+Запуск фронтенда и бэкенда
+
+Dev (локально):
+
+1. Запустить БЭКЕНД (Nest):
+
+```bash
+npm run start:dev
+```
+
+2. Запустить ФРОНТЕНД (Vite):
+
+```bash
+npm run client:dev
+```
+
+Vite проксирует запросы на `/api` к `http://localhost:3000`. Бэкенд слушает `/api/*` через глобальный префикс.
+
+Prod (docker compose):
+
+1. Собрать клиент:
+
+```bash
+npm run client:build
+```
+
+2. Запустить compose (БД, миграции, 3 бэкенда, nginx со SPA):
+
+```bash
+make run-app
+```
+
+Nginx раздаёт статический `client/dist` и проксирует `/api` на backend upstream. Приложение доступно на `http://localhost/`.

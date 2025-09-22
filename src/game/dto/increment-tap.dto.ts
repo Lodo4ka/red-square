@@ -1,11 +1,11 @@
-import { IsNotEmpty, IsNumber } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsOptional } from 'class-validator';
 
 export class IncrementTapDto {
   @IsNotEmpty()
   @IsNumber()
   roundId: number;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsNumber()
   userId: number;
 }
