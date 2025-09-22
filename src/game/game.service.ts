@@ -5,6 +5,7 @@ import { ConfigService } from '@nestjs/config';
 import { toMilliseconds } from 'src/users/utils/date';
 import { Status } from '@prisma/client';
 import { JoinRoundDto } from './dto/join-round.dto';
+import { IncrementTapDto } from './dto/increment-tap.dto';
 
 @Injectable()
 export class GameService {
@@ -106,15 +107,54 @@ export class GameService {
     });
   }
 
-  // async incrementTap(incrementTapDto: IncrementTapDto) {
-  //   return await this.prisma.roundPlayer.update({
-  //     where: {
-  //       userId_roundId: {
-  //         userId: incrementTapDto.userId,
-  //         roundId: incrementTapDto.roundId,
-  //       },
-  //     },
-  //     data: { taps: { increment: 1 } },
-  //   });
-  // }
+  async incrementTap(incrementTapDto: IncrementTapDto) {
+    const { userId, roundId } = incrementTapDto;
+    return await this.prisma.$transaction(async (tx) => {
+      const currentRound = await tx.round.findUnique({
+        where: {
+          id: roundId,
+        },
+      });
+      if (!currentRound) {
+        throw new NotFoundException('такой игры не существует');
+      }
+      if (currentRound.status !== Status.active) {
+        throw new NotFoundException('игра не активна');
+      }
+      // 1) Сначала инкрементируем taps и получаем новое значение
+      const afterTap = await tx.roundPlayer.update({
+        where: {
+          userId_roundId: {
+            userId,
+            roundId,
+          },
+        },
+        data: { taps: { increment: 1 } },
+        select: { taps: true },
+      });
+
+      // 2) Рассчитываем бонус: каждый 11-й тап даёт +10 очков
+      const isBonus = afterTap.taps % 11 === 0;
+      const scoreIncrement = 1 + (isBonus ? 10 : 0);
+
+      // 3) Обновляем score у игрока на рассчитанную дельту
+      const updatedPlayer = await tx.roundPlayer.update({
+        where: {
+          userId_roundId: {
+            userId,
+            roundId,
+          },
+        },
+        data: { score: { increment: scoreIncrement } },
+      });
+
+      // 4) Затем увеличиваем totalScore раунда на ту же дельту
+      await tx.round.update({
+        where: { id: roundId },
+        data: { totalScore: { increment: scoreIncrement } },
+      });
+
+      return updatedPlayer;
+    });
+  }
 }

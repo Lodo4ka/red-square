@@ -1,98 +1,56 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+Задача
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Разработка браузерной игры "The Last of Guss", где игроки соревнуются, кто быстрее и больше натапает по виртуальному гусю, подхватившему мутацию G-42.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+У раунда есть дата старта и дата завершения. Длительность раунда и cooldown должны быть конфигурируемы, достаточно чтобы они применялись при старте бекенда. Cooldown - время между датой создания раунда и датой начала. Нужно для того, чтобы игроки успели зайти на страницу раунда. Например,
 
-## Description
+# .env
+ROUND_DURATION=60 # минута на раунд
+COOLDOWN_DURATION=30 # полминуты обратного отсчета
+Правила раунда:
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+1 тап = 1 очко, каждый одиннадцатый тап дает 10 очков
+тапать можно только в рамках активного рануда
+активный раунд тот, который уже начался, но еще не закончился
+Пользователи игры:
 
-## Project setup
+выживший – может тапать
+если выжившего зовут Никита, то его тапы не считаются(в статистике показывать нули), хотя и запрос на тап работает как у обычного выжившего
+admin, может создавать раунд
+Роли можно назначать во время создания пользователя исходя из его имени. Например, если username - admin, то роль admin, если username Никита, то роль nikita.
 
-```bash
-$ npm install
-```
+Бекенд
 
-## Compile and run the project
+Бекенд на postgres, nodejs и typescript(с включенным strict). ORM на выбор: sequelize, drizzle, prisma, typeorm. API framework на выбор Fastify, Nest.
 
-```bash
-# development
-$ npm run start
+Когда происходит тап по гусю нужно обеспечить консистентность данных, корректность расчета очков(учесть возможные race conditions) и состояния раунда. Например:
 
-# watch mode
-$ npm run start:dev
+проверяется роль пользователя(Никита или нет)
+проверяется, что раунд активен(текущее время в диапазоне от даты старта до даты завершения раунда)
+увеличивается счетчик тапов и очков игрока в данном раунде
+увеличивается общий счетчик очков в раунде
+REST API - приемлемый вариант.
 
-# production mode
-$ npm run start:prod
-```
+Обязательно нужно учесть возможность запускать несколько серверов с бекендом(например, 1 база и 3 nodejs app). Предполагаемый способ развёртывания: 1 база, 1 реверс прокси, 3 бекенда в докер контейнерах. Реализовывать это не нужно, только учесть в разработке, что нет привязки пользователя к определенному инстансу бекенда. compose и Dockerfile можно не писать. Для запуска достаточно реализовать просто node dist/index.js
 
-## Run tests
+Ожидаемая нагрузка: это тестовое задание и можно рассчитывать на кол-во выживших в раунде около 10, однако, желательно использовать масштабируемые решения.
 
-```bash
-# unit tests
-$ npm run test
+Возможный, но не обязательный вариант роутов для REST API.
 
-# e2e tests
-$ npm run test:e2e
+логин(с помощью куки либо токена либо токена в куке)
+получение списка раундов, можно без пагинации
+создание раунда
+получение информации по раунду, включает инфу о победителе(если раунд завершен) и о своих очках
+тап по гусю, возвращает информацию о кол-ве собственных очков
+Фронтенд
 
-# test coverage
-$ npm run test:cov
-```
+Фронтенд на react, typescript, react-router, vite. UI библиотека и стейт менеджер на выбор.
 
-## Deployment
+3 страницы:
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+логин, где вводится имя и пароль, если такого в базе нет, то он создается, если есть и пароль не совпадает, то показывает ошибку под кнопкой
+список текущих активных и запланированных раундов, айди раунда - ссылка на раунд, кнопка создания раунда, если пользователь админ, по нажатию сразу переводит на страницу раунда
+страница раунда с его состоянием(завершен, активен, еще не начат) с гусем, по которому можно тапать если раунд активен
+Ожидаем чистый код с соблюдением SOLID, корректность API, отзывчивый фронтенд.
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+https://github.com/round-squares/tech-task-for-interview/wiki
