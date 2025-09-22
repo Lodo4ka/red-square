@@ -2,9 +2,12 @@ setup-project:
 	cp .env.example .env
 	npm install
 
-run-app:
+run-app-backend:
 	docker compose up --build migrate
 	docker compose up --build
+
+run-app-frontend:
+	npm run client:dev
 
 stop-app:
 	docker compose down
