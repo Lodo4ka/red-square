@@ -37,7 +37,7 @@ services:
       - ./.env
     environment:
       NODE_ENV: ${NODE_ENV:-production}
-      PORT: ${PORT:-3000}
+      PORT: 3000
       DATABASE_URL: postgresql://app:app@db:5432/app
       JWT_SECRET: ${JWT_SECRET:-red-square-dev-secret}
     depends_on:
@@ -54,7 +54,7 @@ services:
       - ./.env
     environment:
       NODE_ENV: ${NODE_ENV:-production}
-      PORT: ${PORT:-3000}
+      PORT: 3000
       DATABASE_URL: postgresql://app:app@db:5432/app
       JWT_SECRET: ${JWT_SECRET:-red-square-dev-secret}
     depends_on:
@@ -71,7 +71,7 @@ services:
       - ./.env
     environment:
       NODE_ENV: ${NODE_ENV:-production}
-      PORT: ${PORT:-3000}
+      PORT: 3000
       DATABASE_URL: postgresql://app:app@db:5432/app
       JWT_SECRET: ${JWT_SECRET:-red-square-dev-secret}
     depends_on:
