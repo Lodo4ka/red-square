@@ -50,17 +50,13 @@ export class GameService {
     if (!admin) {
       throw new NotFoundException('такого админа не существует');
     }
-    const cooldownDuration = this.configService.get<number>(
-      'COOLDOWN_DURATION',
-    ) as number;
-    const roundDuration = this.configService.get<number>(
-      'ROUND_DURATION',
-    ) as number;
-    console.log('cooldownDuration :>> ', cooldownDuration);
-    console.log('roundDuration :>> ', roundDuration);
-    const startTime = addSeconds(new Date(), cooldownDuration);
-    const endTime = addSeconds(startTime, roundDuration);
-    console.log('deltaSec', (endTime.getTime() - startTime.getTime()) / 1000);
+    const cooldownDuration = Number(
+      this.configService.get('COOLDOWN_DURATION'),
+    );
+    const roundDuration = Number(this.configService.get('ROUND_DURATION'));
+    const now = new Date();
+    const startTime = addSeconds(now, cooldownDuration);
+    const endTime = addSeconds(now, cooldownDuration + roundDuration);
     const round = await this.prisma.round.create({
       data: {
         startTime,
