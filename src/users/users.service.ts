@@ -37,6 +37,14 @@ export class UsersService {
     });
   }
 
+  async getCurrentUser(id: number) {
+    return this.prisma.user.findUnique({
+      where: {
+        id,
+      },
+    });
+  }
+
   async login(loginDto: LoginDto) {
     const { name, password } = loginDto;
     const user: User | null = await this.prisma.user.findUnique({
@@ -47,7 +55,7 @@ export class UsersService {
     if (!user) {
       return this.createUser(name, password);
     }
-    const isValid = await verifyPassword(password, user.password as string);
+    const isValid = await verifyPassword(password, user.password);
     if (!isValid) {
       throw new UnauthorizedException('Неверный пароль');
     }
