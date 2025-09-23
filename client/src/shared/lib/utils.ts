@@ -19,3 +19,21 @@ export function formatDate(value: string | Date) {
   }).format(date)
   return `${d}, ${t}`
 }
+
+export function clamp(value: number, min: number, max: number) {
+  return Math.min(Math.max(value, min), max)
+}
+
+export function formatDuration(ms: number) {
+  const totalSeconds = Math.max(0, Math.floor(ms / 1000))
+  const hours = Math.floor(totalSeconds / 3600)
+  const minutes = Math.floor((totalSeconds % 3600) / 60)
+  const seconds = totalSeconds % 60
+  const mm = String(minutes).padStart(2, '0')
+  const ss = String(seconds).padStart(2, '0')
+  if (hours > 0) {
+    const hh = String(hours).padStart(2, '0')
+    return `${hh}:${mm}:${ss}`
+  }
+  return `${mm}:${ss}`
+}

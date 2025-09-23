@@ -6,6 +6,7 @@ import { type UserStore } from "@/enteties/User/model";
 import { Button } from "@/shared/ui/button";
 import { ROUTES_PATH_CLIENT } from "@/shared/constants";
 import { useNavigate } from "react-router-dom";
+import { type Status } from "@/enteties/Round/type";
 
 export const Home = () => {
   const { data: rounds, isLoading: isLoadingRounds } = useGetRoundsQuery();
@@ -27,8 +28,12 @@ export const Home = () => {
     navigate(`${ROUTES_PATH_CLIENT.GAME}/${roundId}`);
   }
 
-  const handleRoundClick = (roundId: number) => {
-    navigate(`${ROUTES_PATH_CLIENT.GAME}/${roundId}`);
+  const handleRoundClick = (roundId: number, status: Status) => {
+    if (status === 'active' || status === 'cooldown') {
+      navigate(`${ROUTES_PATH_CLIENT.GAME}/${roundId}`);
+    } else {
+      navigate(`${ROUTES_PATH_CLIENT.ROUND}/${roundId}`);
+    }
   }
 
   return (
@@ -39,7 +44,7 @@ export const Home = () => {
         </Button>
       </div>}
       {rounds?.map((round) => (
-        <RoundCard className="cursor-pointer mb-4" key={round.id} id={round.id} startAt={round.startTime} endAt={round.endTime} status={round.status} onClick={() => handleRoundClick(round.id)} />
+        <RoundCard className="cursor-pointer mb-4" key={round.id} id={round.id} startAt={round.startTime} endAt={round.endTime} status={round.status} onClick={() => handleRoundClick(round.id, round.status)} />
       ))}
     </div>
   )
