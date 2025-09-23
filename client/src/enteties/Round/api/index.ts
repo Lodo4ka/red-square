@@ -8,7 +8,7 @@ const roundApi = emptySplitApi.injectEndpoints({
     }),
     createRound: builder.mutation<number, { adminId: number }>({
       query: (body) => ({ url: 'game/rounds', method: 'POST', body }),
-      transformResponse: (response: unknown) => (response as Round).id,
+      transformResponse: (response: Round) => response.id,
     }),
   }),
 })

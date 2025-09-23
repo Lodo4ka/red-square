@@ -2,7 +2,7 @@ import { PrismaService } from 'nestjs-prisma';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateRoundDto } from './dto/create-round.dto';
 import { ConfigService } from '@nestjs/config';
-import { toMilliseconds } from 'src/users/utils/date';
+import { addSeconds } from 'src/users/utils/date';
 import { Prisma, Round, Status } from '@prisma/client';
 import { JoinRoundDto } from './dto/join-round.dto';
 import { IncrementTapDto } from './dto/increment-tap.dto';
@@ -56,12 +56,11 @@ export class GameService {
     const roundDuration = this.configService.get<number>(
       'ROUND_DURATION',
     ) as number;
-    const startTime = new Date(
-      new Date().getTime() + toMilliseconds(cooldownDuration),
-    );
-    const endTime = new Date(
-      startTime.getTime() + toMilliseconds(roundDuration),
-    );
+    console.log('cooldownDuration :>> ', cooldownDuration);
+    console.log('roundDuration :>> ', roundDuration);
+    const startTime = addSeconds(new Date(), cooldownDuration);
+    const endTime = addSeconds(startTime, roundDuration);
+    console.log('deltaSec', (endTime.getTime() - startTime.getTime()) / 1000);
     const round = await this.prisma.round.create({
       data: {
         startTime,
@@ -81,7 +80,11 @@ export class GameService {
   }
 
   async getAllRounds() {
-    const rounds = await this.prisma.round.findMany();
+    const rounds = await this.prisma.round.findMany({
+      orderBy: {
+        id: 'desc',
+      },
+    });
     const now = new Date();
     const updates = rounds.map(async (r) => {
       const expected = this.computeExpectedStatus(r, now);
