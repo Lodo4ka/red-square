@@ -14,11 +14,7 @@ const loginApi = emptySplitApi.injectEndpoints({
       transformResponse: (response: LoginResponse) => response,
       async onQueryStarted(_, { dispatch, queryFulfilled }) {
           const { data } = await queryFulfilled;
-          const user = {
-            name: data.name,
-            role: data.role,
-          };
-          dispatch(setUser(user));
+          dispatch(setUser(data));
       },
     }),
     getMe: builder.query<LoginResponse, void>({
@@ -26,11 +22,7 @@ const loginApi = emptySplitApi.injectEndpoints({
       transformResponse: (response: LoginResponse) => response,
       async onQueryStarted(_, { dispatch, queryFulfilled }) {
         const { data } = await queryFulfilled;
-        const user = {
-          name: data.name,
-          role: data.role,
-        };
-        dispatch(setUser(user));
+        dispatch(setUser(data));
       },
     }),
     logout: builder.mutation({
@@ -42,4 +34,4 @@ const loginApi = emptySplitApi.injectEndpoints({
   })
 })
 
-export const { useLoginMutation, useGetMeQuery } = loginApi
+export const { useLoginMutation, useGetMeQuery, useLogoutMutation } = loginApi

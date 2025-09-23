@@ -2,19 +2,30 @@ import { Card } from "@/shared/ui/Card/Card"
 import { CardHeader } from "@/shared/ui/Card/CardHeader"
 import { CardTitle } from "@/shared/ui/Card/CardTitle"
 import { CardContent } from "@/shared/ui/Card/CardContent"
-import { Navigate, Outlet } from "react-router-dom"
+import { Outlet, useNavigate, useParams } from "react-router-dom"
 import { PageLoader } from "@/shared/ui/page-loader"
 import { useGetMeQuery } from "@/enteties/User/api/login"
-import { ROUTES_PATH_CLIENT } from "@/shared/constants"
+import { ROUTES_PATH_CLIENT } from "@/shared/constants";
+import { useEffect } from "react"
+import { useSelector } from "react-redux"
+import { type UserStore } from "@/enteties/User/model"
 
 export const GameLayout = () => {
-  const { isLoading, isError } = useGetMeQuery();
+  const { isLoading, isError, isFetching } = useGetMeQuery();
+  const user = useSelector((state: { user: { user: UserStore } }) => {
+    return state.user?.user;
+  });
+  const navigate = useNavigate();
+  const { id } = useParams();
 
-  if (isLoading) {
+  useEffect(() => {
+    if (isError) {
+      navigate(ROUTES_PATH_CLIENT.LOGIN);
+    }
+  }, [isError, navigate]);
+
+  if (isLoading || isFetching) {
     return <PageLoader />;
-  }
-  if (isError) {
-    return <Navigate to={ROUTES_PATH_CLIENT.LOGIN} replace />;
   }
 
   return (
@@ -22,8 +33,8 @@ export const GameLayout = () => {
       <Card className="w-full max-w-xl">
         <CardHeader>
           <CardTitle className="flex items-center">
-            Раунды
-            <span className="ml-auto text-lg">Имя игрока</span>
+            Раунд {id}
+            <span className="ml-auto text-lg">{user?.name}</span>
           </CardTitle>
         </CardHeader>
         <CardContent>

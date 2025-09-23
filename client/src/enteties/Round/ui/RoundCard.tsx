@@ -1,32 +1,22 @@
 import * as React from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/shared/ui'
 import { Separator } from '@/shared/ui'
+import { formatDate } from '@/shared/lib/utils'
+import { cn } from '@/shared/lib/utils'
 
 interface RoundCardProps {
-  id: string
+  id: number
   startAt: string | Date
   endAt: string | Date
   status: string
+  className?: string
+  onClick?: () => void
 }
 
-function formatDate(value: string | Date) {
-  const date = typeof value === 'string' ? new Date(value) : value
-  const d = new Intl.DateTimeFormat('ru-RU', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  }).format(date)
-  const t = new Intl.DateTimeFormat('ru-RU', {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  }).format(date)
-  return `${d}, ${t}`
-}
 
-export const RoundCard: React.FC<RoundCardProps> = ({ id, startAt, endAt, status }) => {
+export const RoundCard: React.FC<RoundCardProps> = ({ id, startAt, endAt, status, className, onClick }) => {
   return (
-    <Card className="bg-muted/10">
+    <Card className={cn("bg-muted/10", className)} onClick={onClick}>
       <CardHeader className="flex flex-row items-start gap-3">
         <span className="mt-2 inline-block h-2 w-2 rounded-full bg-foreground" />
         <div>

@@ -1,4 +1,5 @@
-import { Navigate, Outlet } from 'react-router-dom'
+import { Outlet, useNavigate } from 'react-router-dom'
+import { useEffect } from 'react'
 import { Card } from '@/shared/ui/Card/Card'
 import { CardHeader } from '@/shared/ui/Card/CardHeader'
 import { CardTitle } from '@/shared/ui/Card/CardTitle'
@@ -8,13 +9,18 @@ import { PageLoader } from '@/shared/ui/page-loader'
 import { ROUTES_PATH_CLIENT } from '@/shared/constants'
 
 export const AuthLayout = () => {
-  const { isLoading, isError } = useGetMeQuery();
+  const { isLoading, isFetching, isSuccess } = useGetMeQuery();
+  const navigate = useNavigate();
 
-  if (isLoading) {
+  useEffect(() => {
+    if (isSuccess) {
+      navigate(ROUTES_PATH_CLIENT.HOME);
+    }
+  }, [isSuccess, navigate]);
+
+  if (isLoading || isFetching) {
     return <PageLoader />;
   }
-
-  if (!isLoading && !isError) return <Navigate to={ROUTES_PATH_CLIENT.HOME} replace />;
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center p-4 bg-gray-100">

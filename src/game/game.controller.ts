@@ -9,7 +9,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 export class GameController {
   constructor(private readonly gameService: GameService) {}
 
-  @Get('all')
+  @Get('rounds')
   getAllRounds() {
     return this.gameService.getAllRounds();
   }
@@ -26,12 +26,12 @@ export class GameController {
     return this.gameService.incrementTap(createRoundDto);
   }
 
-  @Get(':id')
+  @Get('rounds/:id')
   getRound(@Param('id') id: string) {
     return this.gameService.getRound(parseInt(id));
   }
 
-  @Post()
+  @Post('rounds')
   @UseGuards(JwtAuthGuard)
   createRound(@Body() createRoundDto: CreateRoundDto) {
     return this.gameService.createRound(createRoundDto);

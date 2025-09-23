@@ -101,6 +101,7 @@ export class GameService {
       where: {
         id,
       },
+      include: { roundPlayers: true },
     });
     if (!round) {
       throw new NotFoundException('такой игры не существует');
