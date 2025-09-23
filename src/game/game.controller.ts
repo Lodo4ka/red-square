@@ -20,10 +20,13 @@ export class GameController {
     return this.gameService.joinRound(joinRoundDto);
   }
 
-  @Post('/tap')
+  @Post('/rounds/:id')
   @UseGuards(JwtAuthGuard)
-  incrementTap(@Body() createRoundDto: IncrementTapDto) {
-    return this.gameService.incrementTap(createRoundDto);
+  updateRound(
+    @Param('id') id: string,
+    @Body() incrementTapDto: IncrementTapDto,
+  ) {
+    return this.gameService.updateRound(parseInt(id), incrementTapDto);
   }
 
   @Get('rounds/:id')

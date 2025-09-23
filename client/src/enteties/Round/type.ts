@@ -1,5 +1,13 @@
 export type Status = 'active' | 'finished' | 'cooldown';
 
+export type RoundPlayer = {
+  id: number;
+  score: number;
+  userId: number;
+  roundId: number;
+  taps: number;
+}
+
 export type Round = {
   id: number;
   createdAt: Date;
@@ -9,4 +17,5 @@ export type Round = {
   adminId: number;
   totalScore: number;
   status: Status;
+  roundPlayers: RoundPlayer[];
 }

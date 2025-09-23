@@ -24,7 +24,7 @@ export const Home = () => {
   }
 
   const handleCreateRound = async () => {
-    const roundId = await createRound({ adminId: user.id });
+    const { data: roundId } = await createRound({ adminId: user.id });
     navigate(`${ROUTES_PATH_CLIENT.GAME}/${roundId}`);
   }
 

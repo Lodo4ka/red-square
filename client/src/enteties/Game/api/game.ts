@@ -6,7 +6,10 @@ const gameApi = emptySplitApi.injectEndpoints({
     getRound: builder.query<Round, string>({
       query: (id) => `game/rounds/${id}`,
     }),
+    updateRound: builder.mutation<void, { id: string, userId: number }>({
+      query: ({ id, userId }) => ({ url: `game/rounds/${id}`, method: 'POST', body: { userId } }),
+    }),
   })
 })
 
-export const { useGetRoundQuery } = gameApi;
+export const { useGetRoundQuery, useUpdateRoundMutation } = gameApi;

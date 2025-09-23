@@ -13,7 +13,6 @@ interface RoundCardProps {
   onClick?: () => void
 }
 
-
 export const RoundCard: React.FC<RoundCardProps> = ({ id, startAt, endAt, status, className, onClick }) => {
   return (
     <Card className={cn("bg-muted/10", className)} onClick={onClick}>

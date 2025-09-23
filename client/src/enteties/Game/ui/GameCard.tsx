@@ -1,8 +1,16 @@
 import type { Round } from "@/enteties/Round/type"
-import { cn } from "@/shared/lib/utils"
+import { cn, formatMsToHHMMSS } from "@/shared/lib/utils"
 import { useEffect, useMemo, useState } from "react"
+import { useSelector } from "react-redux";
+import { type UserStore } from "@/enteties/User/model";
+import { useUpdateRoundMutation } from "../api/game";
 
 export const GameCard = ({ round }: { round: Round }) => {
+  const user = useSelector((state: { user: { user: UserStore } }) => {
+    return state.user?.user;
+  });
+  const [updateRound] = useUpdateRoundMutation();
+
   const rows = useMemo(
     () => [
       { outer: 220, inner: 0 },
@@ -46,14 +54,6 @@ export const GameCard = ({ round }: { round: Round }) => {
     }
   }, [round]);
 
-  const formatMsToHHMMSS = (ms: number) => {
-    const totalSeconds = Math.max(0, Math.floor(ms / 1000))
-    const hours = String(Math.floor(totalSeconds / 3600)).padStart(2, "0")
-    const minutes = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, "0")
-    const seconds = String(totalSeconds % 60).padStart(2, "0")
-    return `${hours}:${minutes}:${seconds}`
-  }
-
   const [timeLeft, setTimeLeft] = useState<string>(() => {
     const endMs = Number(new Date(round.endTime))
     const msLeft = Number.isFinite(endMs) ? Math.max(0, endMs - Date.now()) : 0
@@ -71,9 +71,39 @@ export const GameCard = ({ round }: { round: Round }) => {
     return () => clearInterval(intervalId)
   }, [round.endTime])
 
+  const [isPressed, setIsPressed] = useState(false)
+  const [tapEffects, setTapEffects] = useState<Array<{ id: number; x: number; y: number }>>([])
+  const addTapEffect = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (round.status !== 'active') return
+    setIsPressed(true)
+    const rect = e.currentTarget.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const y = e.clientY - rect.top
+    const id = Date.now() + Math.random()
+    setTapEffects(prev => [...prev, { id, x, y }])
+    window.setTimeout(() => {
+      setTapEffects(prev => prev.filter(effect => effect.id !== id))
+      updateRound({ id: String(round.id), userId: user?.id })
+    }, 750)
+  }
+
+  const myScore = useMemo(() => {
+    return round.roundPlayers.find(player => player.userId === user?.id)?.score
+  }, [round, user])
+
   return (
     <div className="w-full flex flex-col items-center">
-      <div className="w-full flex flex-col items-center gap-3 py-6 select-none">
+      <div
+        className={cn(
+          "relative w-full flex flex-col items-center gap-3 py-6 select-none transition-transform duration-150 ease-out",
+          round.status === 'active' ? "cursor-pointer active:scale-[.985]" : "cursor-default",
+          isPressed && round.status === 'active' && "scale-[.985]"
+        )}
+        onPointerDown={round.status === 'active' ? addTapEffect : undefined}
+        onPointerUp={() => setIsPressed(false)}
+        onPointerLeave={() => setIsPressed(false)}
+        onPointerCancel={() => setIsPressed(false)}
+      >
         {rows.map((row, idx) => {
           return (
             <div
@@ -83,19 +113,32 @@ export const GameCard = ({ round }: { round: Round }) => {
             >
               {row.inner > 0 && (
                 <div
-                  className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-2 rounded-full bg-zinc-800"
+                  className={cn(
+                    "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-2 rounded-full bg-zinc-800 transition-colors duration-150",
+                    isPressed && "bg-zinc-900"
+                  )}
                   style={{ width: row.inner }}
                 />
               )}
             </div>
           )
         })}
+
+        {tapEffects.map(effect => (
+          <div
+            key={effect.id}
+            className="absolute z-10 pointer-events-none tap-float select-none"
+            style={{ left: effect.x, top: effect.y }}
+          >
+            <span className="text-zinc-900 text-sm font-semibold drop-shadow-[0_1px_0_rgba(255,255,255,0.6)]">+1</span>
+          </div>
+        ))}
       </div>
 
       <div className="mt-2 flex flex-col items-center text-center">
         <p className={cn("text-xl font-medium text-zinc-800", roundStatus?.color)}>{roundStatus?.text}</p>
         <p className="text-zinc-600 mt-1">До конца осталось: <span className="tabular-nums font-medium text-zinc-900">{timeLeft}</span></p>
-        <p className="text-zinc-600 mt-1">Мои очки — <span className="font-medium text-zinc-900">{round.totalScore}</span></p>
+        <p className="text-zinc-600 mt-1">Мои очки — <span className="font-medium text-zinc-900">{myScore}</span></p>
       </div>
     </div>
   )

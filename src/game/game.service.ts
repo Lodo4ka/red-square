@@ -148,8 +148,8 @@ export class GameService {
     });
   }
 
-  async incrementTap(incrementTapDto: IncrementTapDto) {
-    const { userId, roundId } = incrementTapDto;
+  async updateRound(roundId: number, incrementTapDto: IncrementTapDto) {
+    const { userId } = incrementTapDto;
     return await this.prisma.$transaction(async (tx) => {
       const currentRound = await tx.round.findUnique({
         where: {

@@ -155,3 +155,23 @@ button:focus-visible {
   padding: 2rem;
   text-align: center;
 }
+
+/* +1 floating tap effect */
+@keyframes tapFloatUpFade {
+  0% {
+    transform: translate(-50%, -50%) translateY(0) scale(1);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) translateY(-28px) scale(1.1);
+    opacity: 0;
+  }
+}
+
+.tap-float {
+  transform: translate(-50%, -50%);
+  animation: tapFloatUpFade 700ms ease-out forwards;
+}
