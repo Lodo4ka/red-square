@@ -9,7 +9,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 export class GameController {
   constructor(private readonly gameService: GameService) {}
 
-  @Get()
+  @Get('all')
   getAllRounds() {
     return this.gameService.getAllRounds();
   }
