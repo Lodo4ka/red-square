@@ -55,21 +55,21 @@ export const GameCard = ({ round }: { round: Round }) => {
   }, [round]);
 
   const [timeLeft, setTimeLeft] = useState<string>(() => {
-    const endMs = Number(new Date(round.endTime))
+    const endMs = Number(new Date(round.startTime))
     const msLeft = Number.isFinite(endMs) ? Math.max(0, endMs - Date.now()) : 0
     return formatMsToHHMMSS(msLeft)
   })
 
   useEffect(() => {
     const compute = () => {
-      const endMs = Number(new Date(round.endTime))
+      const endMs = Number(new Date(round.startTime))
       const msLeft = Number.isFinite(endMs) ? Math.max(0, endMs - Date.now()) : 0
       setTimeLeft(formatMsToHHMMSS(msLeft))
     }
     compute()
     const intervalId = setInterval(compute, 1000)
     return () => clearInterval(intervalId)
-  }, [round.endTime])
+  }, [round.startTime])
 
   const [isPressed, setIsPressed] = useState(false)
   const [tapEffects, setTapEffects] = useState<Array<{ id: number; x: number; y: number }>>([])

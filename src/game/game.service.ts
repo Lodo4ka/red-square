@@ -54,9 +54,8 @@ export class GameService {
       this.configService.get('COOLDOWN_DURATION'),
     );
     const roundDuration = Number(this.configService.get('ROUND_DURATION'));
-    const now = new Date();
-    const startTime = addSeconds(now, cooldownDuration);
-    const endTime = addSeconds(now, cooldownDuration + roundDuration);
+    const startTime = addSeconds(new Date(), cooldownDuration);
+    const endTime = addSeconds(startTime, roundDuration);
     const round = await this.prisma.round.create({
       data: {
         startTime,

@@ -19,3 +19,6 @@ restart-app:
 
 migrate:
 	docker compose run --rm migrate
+
+run-database-gui:
+	docker compose run --rm -p 5555:5555 -e DATABASE_URL=postgresql://app:app@db:5432/app migrate npx prisma studio --hostname 0.0.0.0 --port 5555
