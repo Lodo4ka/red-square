@@ -1,4 +1,4 @@
-import { useCreateRoundMutation, useGetRoundsQuery } from "@/enteties/Round/api";
+import { useCreateRoundMutation, useGetRoundsQuery, useJoinRoundMutation } from "@/enteties/Game/api/game";
 import { RoundCard } from "@/enteties/Round/ui/RoundCard";
 import { PageLoader } from "@/shared/ui/page-loader";
 import { useSelector } from "react-redux";
@@ -7,11 +7,14 @@ import { Button } from "@/shared/ui/button";
 import { ROUTES_PATH_CLIENT } from "@/shared/constants";
 import { useNavigate } from "react-router-dom";
 import { type Status } from "@/enteties/Round/type";
+import { useErrorModal } from "@/shared/context";
 
 export const Home = () => {
   const { data: rounds, isLoading: isLoadingRounds } = useGetRoundsQuery();
   const [createRound, { isLoading: isCreatingRound }] = useCreateRoundMutation();
+  const [joinRound, { isLoading: isJoiningRound }] = useJoinRoundMutation();
   const navigate = useNavigate();
+  const { showError } = useErrorModal();
   const isAdmin = useSelector((state: { user: { user: UserStore } }) => {
     return state.user?.user?.isAdmin;
   });
@@ -19,7 +22,7 @@ export const Home = () => {
   const user = useSelector((state: { user: { user: UserStore } }) => {
     return state.user?.user;
   });
-  if (isLoadingRounds || isCreatingRound) {
+  if (isLoadingRounds || isCreatingRound || isJoiningRound) {
     return <PageLoader />;
   }
 
@@ -28,9 +31,19 @@ export const Home = () => {
     navigate(`${ROUTES_PATH_CLIENT.GAME}/${roundId}`);
   }
 
-  const handleRoundClick = (roundId: number, status: Status) => {
+  const handleJoinRound = async (roundId: number) => {
+    try {
+
+    await joinRound({ roundId: roundId });
+    } catch {
+      showError('Не удалось присоединиться к раунду');
+    }
+  }
+
+  const handleRoundClick = async (roundId: number, status: Status) => {
     if (status === 'active' || status === 'cooldown') {
       navigate(`${ROUTES_PATH_CLIENT.GAME}/${roundId}`);
+      await handleJoinRound(roundId);
     } else {
       navigate(`${ROUTES_PATH_CLIENT.ROUND}/${roundId}`);
     }

@@ -6,12 +6,18 @@ import { addSeconds } from 'src/users/utils/date';
 import { Prisma, Round, Status } from '@prisma/client';
 import { JoinRoundDto } from './dto/join-round.dto';
 import { IncrementTapDto } from './dto/increment-tap.dto';
+import { UsersRepository } from '../users/users.reposity';
+import { GameRepository } from './game.repository';
+import { UnitOfWork } from '../shared/uow/unit-of-work';
 
 @Injectable()
 export class GameService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
+    private readonly usersRepository: UsersRepository,
+    private readonly gameRepository: GameRepository,
+    private readonly unitOfWork: UnitOfWork,
   ) {}
 
   private computeExpectedStatus(
@@ -42,11 +48,9 @@ export class GameService {
   }
 
   async createRound(createRoundDto: CreateRoundDto) {
-    const admin = await this.prisma.user.findUnique({
-      where: {
-        id: createRoundDto.adminId,
-      },
-    });
+    const admin = await this.usersRepository.findUserById(
+      createRoundDto.adminId,
+    );
     if (!admin) {
       throw new NotFoundException('такого админа не существует');
     }
@@ -99,7 +103,7 @@ export class GameService {
       where: {
         id,
       },
-      include: { roundPlayers: true },
+      include: { roundPlayers: { include: { user: true } } },
     });
     if (!round) {
       throw new NotFoundException('такой игры не существует');
@@ -107,53 +111,26 @@ export class GameService {
     return this.reconcileRoundStatus(round, this.prisma);
   }
 
-  async joinRound(joinRoundDto: JoinRoundDto) {
-    const round = await this.prisma.round.findUnique({
-      where: {
-        id: joinRoundDto.roundId,
-      },
-    });
+  async joinRound(joinRoundDto: JoinRoundDto & { userId: number }) {
+    const round = await this.gameRepository.findRoundById(joinRoundDto.roundId);
     if (!round) {
       throw new NotFoundException('такой игры не существует');
     }
     await this.reconcileRoundStatus(round, this.prisma);
-    const user = await this.prisma.user.findUnique({
-      where: {
-        id: joinRoundDto.userId,
-      },
-    });
+    const user = await this.usersRepository.findUserById(joinRoundDto.userId);
     if (!user) {
       throw new NotFoundException('такого пользователя не существует');
     }
-    return await this.prisma.round.update({
-      where: {
-        id: joinRoundDto.roundId,
-      },
-      data: {
-        roundPlayers: {
-          connectOrCreate: {
-            where: {
-              userId_roundId: {
-                userId: joinRoundDto.userId,
-                roundId: joinRoundDto.roundId,
-              },
-            },
-            create: { userId: joinRoundDto.userId },
-          },
-        },
-      },
-      include: { roundPlayers: true },
-    });
+    return await this.gameRepository.joinRound(
+      joinRoundDto.roundId,
+      joinRoundDto.userId,
+    );
   }
 
   async updateRound(roundId: number, incrementTapDto: IncrementTapDto) {
     const { userId } = incrementTapDto;
-    return await this.prisma.$transaction(async (tx) => {
-      const currentRound = await tx.round.findUnique({
-        where: {
-          id: roundId,
-        },
-      });
+    return await this.unitOfWork.execute(async (tx) => {
+      const currentRound = await this.gameRepository.findRoundById(roundId, tx);
       if (!currentRound) {
         throw new NotFoundException('такой игры не существует');
       }
@@ -162,38 +139,27 @@ export class GameService {
         throw new NotFoundException('игра не активна');
       }
       // 1) Сначала инкрементируем taps и получаем новое значение
-      const afterTap = await tx.roundPlayer.update({
-        where: {
-          userId_roundId: {
-            userId,
-            roundId,
-          },
-        },
-        data: { taps: { increment: 1 } },
-        select: { taps: true },
-      });
-
+      const afterTap = await this.gameRepository.incrementUserTap(
+        userId,
+        roundId,
+        tx,
+      );
       // 2) Рассчитываем бонус: каждый 11-й тап даёт +10 очков
       const isBonus = afterTap.taps % 11 === 0;
       const scoreIncrement = 1 + (isBonus ? 10 : 0);
-
       // 3) Обновляем score у игрока на рассчитанную дельту
-      const updatedPlayer = await tx.roundPlayer.update({
-        where: {
-          userId_roundId: {
-            userId,
-            roundId,
-          },
-        },
-        data: { score: { increment: scoreIncrement } },
-      });
-
+      const updatedPlayer = await this.gameRepository.updateUserScore(
+        userId,
+        roundId,
+        scoreIncrement,
+        tx,
+      );
       // 4) Затем увеличиваем totalScore раунда на ту же дельту
-      await tx.round.update({
-        where: { id: roundId },
-        data: { totalScore: { increment: scoreIncrement } },
-      });
-
+      await this.gameRepository.updateRoundTotalScore(
+        roundId,
+        scoreIncrement,
+        tx,
+      );
       return updatedPlayer;
     });
   }

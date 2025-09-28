@@ -9,6 +9,7 @@ export const GameCard = ({ round }: { round: Round }) => {
   const user = useSelector((state: { user: { user: UserStore } }) => {
     return state.user?.user;
   });
+  const [myScore, setMyScore] = useState(round.roundPlayers?.find(player => player.userId === user?.id)?.score || 0)
   const [updateRound] = useUpdateRoundMutation();
 
   const rows = useMemo(
@@ -81,15 +82,14 @@ export const GameCard = ({ round }: { round: Round }) => {
     const y = e.clientY - rect.top
     const id = Date.now() + Math.random()
     setTapEffects(prev => [...prev, { id, x, y }])
-    window.setTimeout(() => {
+    window.setTimeout(async () => {
       setTapEffects(prev => prev.filter(effect => effect.id !== id))
-      updateRound({ id: String(round.id), userId: user?.id })
+      const { data } = await updateRound({ id: String(round.id), userId: user?.id })
+      if (!data) return
+      const { score } = data;
+      setMyScore(score)
     }, 750)
   }
-
-  const myScore = useMemo(() => {
-    return round.roundPlayers.find(player => player.userId === user?.id)?.score
-  }, [round, user])
 
   return (
     <div className="w-full flex flex-col items-center">

@@ -3,57 +3,32 @@ import { LoginDto } from './dto/login';
 import { PrismaService } from 'nestjs-prisma';
 import { Role, User } from '@prisma/client';
 import { hashPassword, verifyPassword } from './utils/password';
+import { UsersRepository } from './users.reposity';
 
 @Injectable()
 export class UsersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private usersRepository: UsersRepository) {}
 
   async createUser(name: string, password: string) {
     const targetName = name.toLowerCase();
     const hashedPassword = await hashPassword(password);
     if (targetName === Role.admin) {
-      return this.prisma.user.create({
-        data: {
-          name,
-          password: hashedPassword,
-          role: Role.admin,
-        },
-      });
+      return this.usersRepository.createUser(name, hashedPassword);
     } else if (targetName === Role.nikita) {
-      return await this.prisma.user.create({
-        data: {
-          name,
-          password: hashedPassword,
-          role: Role.nikita,
-        },
-      });
+      return this.usersRepository.createUser(name, hashedPassword);
     }
-    return await this.prisma.user.create({
-      data: {
-        name,
-        password: hashedPassword,
-        role: Role.survivor,
-      },
-    });
+    return this.usersRepository.createUser(name, hashedPassword);
   }
 
   async getCurrentUser(id: number) {
-    return this.prisma.user.findUnique({
-      where: {
-        id,
-      },
-    });
+    return this.usersRepository.findUserById(id);
   }
 
   async login(loginDto: LoginDto) {
     const { name, password } = loginDto;
-    const user: User | null = await this.prisma.user.findUnique({
-      where: {
-        name,
-      },
-    });
+    const user: User | null = await this.usersRepository.findUserByName(name);
     if (!user) {
-      return this.createUser(name, password);
+      return this.usersRepository.createUser(name, password);
     }
     const isValid = await verifyPassword(password, user.password);
     if (!isValid) {

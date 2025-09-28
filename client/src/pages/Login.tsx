@@ -29,7 +29,7 @@ export const Login = () => {
         <label className="block text-lg font-semibold">Имя пользователя:</label>
         <Input name="name" placeholder="введите имя пользователя" required />
       </div>
-      <div className="space-y-2">
+      <div className="space-y-2 mb-4">
         <label className="block text-lg font-semibold">Пароль:</label>
         <Input
           type="password"

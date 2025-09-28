@@ -8,15 +8,14 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
-import { LoginDto } from './dto/login';
 import { UserEntity } from './entities/user.entity';
-import { plainToInstance } from 'class-transformer';
 import { AuthCookie } from '../auth/auth-cookie.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import {
   CurrentUser,
   CurrentUserPayload,
 } from 'src/auth/current-user.decorator';
+import { User } from '@prisma/client';
 
 @Controller('users')
 @UseInterceptors(ClassSerializerInterceptor)
@@ -25,18 +24,16 @@ export class UsersController {
 
   @Post('login')
   @AuthCookie('login')
-  async login(@Body() loginDto: LoginDto): Promise<UserEntity> {
-    const user = await this.usersService.login(loginDto);
-    return plainToInstance(UserEntity, user, { excludeExtraneousValues: true });
+  async login(@Body() loginDto: UserEntity): Promise<User> {
+    return await this.usersService.login(loginDto);
   }
 
   @Get('me')
   @UseGuards(JwtAuthGuard)
   async getMe(@CurrentUser() user: CurrentUserPayload) {
-    const entity = await this.usersService.getCurrentUser(user.sub);
-    return plainToInstance(UserEntity, entity, {
-      excludeExtraneousValues: true,
-    });
+    const result = await this.usersService.getCurrentUser(user.sub);
+    console.log('result :>> ', result);
+    return result;
   }
 
   @Post('logout')

@@ -4,6 +4,12 @@ import { CreateRoundDto } from './dto/create-round.dto';
 import { JoinRoundDto } from './dto/join-round.dto';
 import { IncrementTapDto } from './dto/increment-tap.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import {
+  CurrentUser,
+  CurrentUserPayload,
+} from '../auth/current-user.decorator';
+import { GetRoundDto } from './dto/get-round.dto';
+import { plainToInstance } from 'class-transformer';
 
 @Controller('game')
 export class GameController {
@@ -16,8 +22,11 @@ export class GameController {
 
   @Post('/join')
   @UseGuards(JwtAuthGuard)
-  joinRound(@Body() joinRoundDto: JoinRoundDto) {
-    return this.gameService.joinRound(joinRoundDto);
+  joinRound(
+    @Body() joinRoundDto: JoinRoundDto,
+    @CurrentUser() user: CurrentUserPayload,
+  ) {
+    return this.gameService.joinRound({ ...joinRoundDto, userId: user.sub });
   }
 
   @Post('/rounds/:id')
@@ -30,8 +39,11 @@ export class GameController {
   }
 
   @Get('rounds/:id')
-  getRound(@Param('id') id: string) {
-    return this.gameService.getRound(parseInt(id));
+  async getRound(@Param('id') id: string) {
+    const round = await this.gameService.getRound(parseInt(id));
+    return plainToInstance(GetRoundDto, round, {
+      excludeExtraneousValues: true,
+    });
   }
 
   @Post('rounds')
