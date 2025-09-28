@@ -1,5 +1,5 @@
 import type { Round } from "@/enteties/Round/type"
-import { cn, formatMsToHHMMSS } from "@/shared/lib/utils"
+import { cn, formatMsToHHMMSS, reloadPage } from "@/shared/lib/utils"
 import { useEffect, useMemo, useState } from "react"
 import { useSelector } from "react-redux";
 import { type UserStore } from "@/enteties/User/model";
@@ -67,12 +67,26 @@ export const GameCard = ({ round }: { round: Round }) => {
     const compute = () => {
       const endMs = Number(new Date(round.startTime))
       const msLeft = Number.isFinite(endMs) ? Math.max(0, endMs - Date.now()) : 0
+      if (msLeft === 0 && round.status === 'cooldown') {
+        return reloadPage()
+      }
       setTimeLeft(formatMsToHHMMSS(msLeft))
     }
     compute()
     const intervalId = setInterval(compute, 1000)
     return () => clearInterval(intervalId)
-  }, [round.startTime])
+  }, [round.startTime, round.status])
+
+  const requestUpdateRound = async () => {
+    try {
+      const { data } = await updateRound({ id: String(round.id), userId: user?.id })
+      if (!data) return
+      const { score } = data;
+      setMyScore(score)
+    } catch {
+      showError('Не удалось отправить тап')
+    }
+  }
 
   const [isPressed, setIsPressed] = useState(false)
   const [tapEffects, setTapEffects] = useState<Array<{ id: number; x: number; y: number }>>([])
@@ -86,14 +100,7 @@ export const GameCard = ({ round }: { round: Round }) => {
     setTapEffects(prev => [...prev, { id, x, y }])
     window.setTimeout(async () => {
       setTapEffects(prev => prev.filter(effect => effect.id !== id))
-      try {
-      const { data } = await updateRound({ id: String(round.id), userId: user?.id })
-        if (!data) return
-        const { score } = data;
-        setMyScore(score)
-      } catch {
-        showError('Не удалось отправить тап')
-      }
+      requestUpdateRound();
     }, 750)
   }
 

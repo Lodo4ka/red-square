@@ -1,9 +1,8 @@
-import { PrismaService } from 'nestjs-prisma';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateRoundDto } from './dto/create-round.dto';
 import { ConfigService } from '@nestjs/config';
 import { addSeconds } from 'src/users/utils/date';
-import { Prisma, Round, Status } from '@prisma/client';
+import { Round, Status } from '@prisma/client';
 import { JoinRoundDto } from './dto/join-round.dto';
 import { IncrementTapDto } from './dto/increment-tap.dto';
 import { UsersRepository } from '../users/users.reposity';
@@ -13,7 +12,6 @@ import { UnitOfWork } from '../shared/uow/unit-of-work';
 @Injectable()
 export class GameService {
   constructor(
-    private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
     private readonly usersRepository: UsersRepository,
     private readonly gameRepository: GameRepository,
@@ -33,16 +31,10 @@ export class GameService {
     return Status.active;
   }
 
-  private async reconcileRoundStatus(
-    round: Round,
-    tx: Prisma.TransactionClient | PrismaService,
-  ): Promise<Round> {
+  private async reconcileRoundStatus(round: Round): Promise<Round> {
     const expected = this.computeExpectedStatus(round);
     if (expected !== round.status) {
-      return await tx.round.update({
-        where: { id: round.id },
-        data: { status: expected },
-      });
+      return await this.gameRepository.updateRoundStatus(round.id, expected);
     }
     return round;
   }
@@ -60,55 +52,33 @@ export class GameService {
     const roundDuration = Number(this.configService.get('ROUND_DURATION'));
     const startTime = addSeconds(new Date(), cooldownDuration);
     const endTime = addSeconds(startTime, roundDuration);
-    const round = await this.prisma.round.create({
-      data: {
-        startTime,
-        endTime,
-        adminId: createRoundDto.adminId,
-        status: Status.cooldown,
-        roundPlayers: {
-          create: [
-            {
-              userId: createRoundDto.adminId,
-            },
-          ],
-        },
-      },
+
+    return await this.gameRepository.createRound({
+      ...createRoundDto,
+      startTime,
+      endTime,
     });
-    return round;
   }
 
   async getAllRounds() {
-    const rounds = await this.prisma.round.findMany({
-      orderBy: {
-        id: 'desc',
-      },
-    });
+    const rounds = await this.gameRepository.getRounds();
     const now = new Date();
     const updates = rounds.map(async (r) => {
       const expected = this.computeExpectedStatus(r, now);
       if (expected !== r.status) {
-        return this.prisma.round.update({
-          where: { id: r.id },
-          data: { status: expected },
-        });
+        return this.gameRepository.updateRoundStatus(r.id, expected);
       }
       return r;
     });
     return Promise.all(updates);
   }
 
-  async getRound(id: number) {
-    const round = await this.prisma.round.findUnique({
-      where: {
-        id,
-      },
-      include: { roundPlayers: { include: { user: true } } },
-    });
+  async getRound(id: number): Promise<Round> {
+    const round = await this.gameRepository.getRound(id);
     if (!round) {
       throw new NotFoundException('такой игры не существует');
     }
-    return this.reconcileRoundStatus(round, this.prisma);
+    return await this.reconcileRoundStatus(round);
   }
 
   async joinRound(joinRoundDto: JoinRoundDto & { userId: number }) {
@@ -116,7 +86,7 @@ export class GameService {
     if (!round) {
       throw new NotFoundException('такой игры не существует');
     }
-    await this.reconcileRoundStatus(round, this.prisma);
+    await this.reconcileRoundStatus(round);
     const user = await this.usersRepository.findUserById(joinRoundDto.userId);
     if (!user) {
       throw new NotFoundException('такого пользователя не существует');
@@ -134,7 +104,7 @@ export class GameService {
       if (!currentRound) {
         throw new NotFoundException('такой игры не существует');
       }
-      const reconciledRound = await this.reconcileRoundStatus(currentRound, tx);
+      const reconciledRound = await this.reconcileRoundStatus(currentRound);
       if (reconciledRound.status !== Status.active) {
         throw new NotFoundException('игра не активна');
       }

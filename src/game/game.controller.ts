@@ -8,8 +8,6 @@ import {
   CurrentUser,
   CurrentUserPayload,
 } from '../auth/current-user.decorator';
-import { GetRoundDto } from './dto/get-round.dto';
-import { plainToInstance } from 'class-transformer';
 
 @Controller('game')
 export class GameController {
@@ -40,10 +38,7 @@ export class GameController {
 
   @Get('rounds/:id')
   async getRound(@Param('id') id: string) {
-    const round = await this.gameService.getRound(parseInt(id));
-    return plainToInstance(GetRoundDto, round, {
-      excludeExtraneousValues: true,
-    });
+    return await this.gameService.getRound(parseInt(id));
   }
 
   @Post('rounds')

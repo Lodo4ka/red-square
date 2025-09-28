@@ -45,3 +45,7 @@ export function formatMsToHHMMSS(ms: number) {
   const seconds = String(totalSeconds % 60).padStart(2, "0")
   return `${hours}:${minutes}:${seconds}`
 }
+
+export const reloadPage = () => {
+  window.location.reload()
+}

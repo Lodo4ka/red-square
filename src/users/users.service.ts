@@ -1,6 +1,5 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { LoginDto } from './dto/login';
-import { PrismaService } from 'nestjs-prisma';
 import { Role, User } from '@prisma/client';
 import { hashPassword, verifyPassword } from './utils/password';
 import { UsersRepository } from './users.reposity';
