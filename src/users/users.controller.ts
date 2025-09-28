@@ -31,9 +31,7 @@ export class UsersController {
   @Get('me')
   @UseGuards(JwtAuthGuard)
   async getMe(@CurrentUser() user: CurrentUserPayload) {
-    const result = await this.usersService.getCurrentUser(user.sub);
-    console.log('result :>> ', result);
-    return result;
+    return await this.usersService.getCurrentUser(user.sub);
   }
 
   @Post('logout')
