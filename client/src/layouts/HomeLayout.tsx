@@ -7,11 +7,15 @@ import { useGetMeQuery } from "@/enteties/User/api/login"
 import { PageLoader } from "@/shared/ui/page-loader"
 import { ROUTES_PATH_CLIENT } from "@/shared/constants"
 import { useEffect } from "react"
+import { useSelector } from "react-redux"
+import { type UserStore } from "@/enteties/User/model"
 
 export const HomeLayout = () => {
   const { isLoading, isError, isFetching } = useGetMeQuery();
   const navigate = useNavigate();
-
+  const user = useSelector((state: { user: { user: UserStore } }) => {
+    return state.user?.user;
+  });
   useEffect(() => {
     if (isError) {
       navigate(ROUTES_PATH_CLIENT.LOGIN);
@@ -28,7 +32,7 @@ export const HomeLayout = () => {
         <CardHeader>
           <CardTitle className="flex items-center">
             Список раундов
-            <span className="ml-auto text-lg">Имя игрока</span>
+            <span className="ml-auto text-lg">{user?.name}</span>
           </CardTitle>
         </CardHeader>
         <CardContent>

@@ -5,3 +5,11 @@ export type LoginResponse = {
   role: string;
   updatedAt: string;
 }
+
+export type User = {
+  id: number;
+  name: string;
+  role: string;
+  createdAt: string;
+  updatedAt: string;
+}

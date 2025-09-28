@@ -15,7 +15,7 @@ interface RoundCardProps {
 
 export const RoundCard: React.FC<RoundCardProps> = ({ id, startAt, endAt, status, className, onClick }) => {
   return (
-    <Card className={cn("bg-muted/10", className)} onClick={onClick}>
+    <Card className={cn("bg-muted/10 cursor-pointer", className)} onClick={onClick}>
       <CardHeader className="flex flex-row items-start gap-3">
         <span className="mt-2 inline-block h-2 w-2 rounded-full bg-foreground" />
         <div>

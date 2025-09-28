@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react"
 import { useSelector } from "react-redux";
 import { type UserStore } from "@/enteties/User/model";
 import { useUpdateRoundMutation } from "../api/game";
+import { useErrorModal } from "@/shared/context/use-error-modal";
 
 export const GameCard = ({ round }: { round: Round }) => {
   const user = useSelector((state: { user: { user: UserStore } }) => {
@@ -11,6 +12,7 @@ export const GameCard = ({ round }: { round: Round }) => {
   });
   const [myScore, setMyScore] = useState(round.roundPlayers?.find(player => player.userId === user?.id)?.score || 0)
   const [updateRound] = useUpdateRoundMutation();
+  const { showError } = useErrorModal();
 
   const rows = useMemo(
     () => [
@@ -84,10 +86,14 @@ export const GameCard = ({ round }: { round: Round }) => {
     setTapEffects(prev => [...prev, { id, x, y }])
     window.setTimeout(async () => {
       setTapEffects(prev => prev.filter(effect => effect.id !== id))
+      try {
       const { data } = await updateRound({ id: String(round.id), userId: user?.id })
-      if (!data) return
-      const { score } = data;
-      setMyScore(score)
+        if (!data) return
+        const { score } = data;
+        setMyScore(score)
+      } catch {
+        showError('Не удалось отправить тап')
+      }
     }, 750)
   }
 

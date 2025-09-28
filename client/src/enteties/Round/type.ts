@@ -1,3 +1,5 @@
+import type { User } from "../User/type";
+
 export type Status = 'active' | 'finished' | 'cooldown';
 
 export type RoundPlayer = {
@@ -6,6 +8,7 @@ export type RoundPlayer = {
   userId: number;
   roundId: number;
   taps: number;
+  user: User;
 }
 
 export type Round = {
