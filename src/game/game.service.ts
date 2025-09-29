@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateRoundDto } from './dto/create-round.dto';
 import { ConfigService } from '@nestjs/config';
 import { addSeconds } from 'src/users/utils/date';
@@ -125,11 +129,14 @@ export class GameService {
         tx,
       );
       // 4) Затем увеличиваем totalScore раунда на ту же дельту
-      await this.gameRepository.updateRoundTotalScore(
+      const updatedRound = await this.gameRepository.updateRoundTotalScore(
         roundId,
         scoreIncrement,
         tx,
       );
+      if (updatedRound.version !== reconciledRound.version + 1) {
+        throw new ConflictException('игра была изменена другим пользователем');
+      }
       return updatedPlayer;
     });
   }

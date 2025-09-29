@@ -10,6 +10,8 @@ export class UnitOfWork {
   constructor(private readonly prisma: PrismaService) {}
 
   async execute<T>(work: (tx: TransactionClient) => Promise<T>): Promise<T> {
-    return this.prisma.$transaction(async (tx) => work(tx));
+    return this.prisma.$transaction(async (tx) => work(tx), {
+      isolationLevel: 'ReadCommitted',
+    });
   }
 }

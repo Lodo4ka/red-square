@@ -95,7 +95,10 @@ export class GameRepository extends BaseRepository {
     const client = this.getClient(tx);
     return client.round.update({
       where: { id: roundId },
-      data: { totalScore: { increment: scoreIncrement } },
+      data: {
+        totalScore: { increment: scoreIncrement },
+        version: { increment: 1 },
+      },
     });
   }
 
