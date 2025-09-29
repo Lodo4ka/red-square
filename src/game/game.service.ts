@@ -11,7 +11,7 @@ import { JoinRoundDto } from './dto/join-round.dto';
 import { IncrementTapDto } from './dto/increment-tap.dto';
 import { UsersRepository } from '../users/users.reposity';
 import { GameRepository } from './game.repository';
-import { UnitOfWork } from '../shared/uow/unit-of-work';
+import { TransactionOrClient, UnitOfWork } from '../shared/uow/unit-of-work';
 
 @Injectable()
 export class GameService {
@@ -35,10 +35,17 @@ export class GameService {
     return Status.active;
   }
 
-  private async reconcileRoundStatus(round: Round): Promise<Round> {
+  private async reconcileRoundStatus(
+    round: Round,
+    tx?: TransactionOrClient,
+  ): Promise<Round> {
     const expected = this.computeExpectedStatus(round);
     if (expected !== round.status) {
-      return await this.gameRepository.updateRoundStatus(round.id, expected);
+      return await this.gameRepository.updateRoundStatus(
+        round.id,
+        expected,
+        tx,
+      );
     }
     return round;
   }
@@ -108,7 +115,7 @@ export class GameService {
       if (!currentRound) {
         throw new NotFoundException('такой игры не существует');
       }
-      const reconciledRound = await this.reconcileRoundStatus(currentRound);
+      const reconciledRound = await this.reconcileRoundStatus(currentRound, tx);
       if (reconciledRound.status !== Status.active) {
         throw new NotFoundException('игра не активна');
       }
