@@ -136,14 +136,11 @@ export class GameService {
         tx,
       );
       // 4) Затем увеличиваем totalScore раунда на ту же дельту
-      const updatedRound = await this.gameRepository.updateRoundTotalScore(
+      await this.gameRepository.updateRoundTotalScore(
         roundId,
         scoreIncrement,
         tx,
       );
-      if (updatedRound.version !== reconciledRound.version + 1) {
-        throw new ConflictException('игра была изменена другим пользователем');
-      }
       return updatedPlayer;
     });
   }
