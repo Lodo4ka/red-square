@@ -58,16 +58,18 @@ export const GameCard = ({ round }: { round: Round }) => {
   }, [round]);
 
   const [timeLeft, setTimeLeft] = useState<string>(() => {
-    const endMs = Number(new Date(round.startTime))
+    const currentTime = round.status === 'active' ? new Date(round.endTime) : new Date(round.startTime)
+    const endMs = Number(currentTime);
     const msLeft = Number.isFinite(endMs) ? Math.max(0, endMs - Date.now()) : 0
     return formatMsToHHMMSS(msLeft)
   })
 
   useEffect(() => {
     const compute = () => {
-      const endMs = Number(new Date(round.startTime))
+      const targetTime = round.status === 'active' ? round.endTime : round.startTime
+      const endMs = Number(new Date(targetTime))
       const msLeft = Number.isFinite(endMs) ? Math.max(0, endMs - Date.now()) : 0
-      if (msLeft === 0 && (round.status === 'cooldown' || round.status === 'active')) {
+      if (msLeft === 0 && (round.status === 'cooldown' || round.status === 'finished')) {
         return reloadPage()
       }
       setTimeLeft(formatMsToHHMMSS(msLeft))
@@ -75,7 +77,7 @@ export const GameCard = ({ round }: { round: Round }) => {
     compute()
     const intervalId = setInterval(compute, 1000)
     return () => clearInterval(intervalId)
-  }, [round.startTime, round.status])
+  }, [round.startTime, round.endTime, round.status])
 
   const requestUpdateRound = async () => {
     try {
