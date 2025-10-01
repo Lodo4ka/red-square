@@ -69,7 +69,7 @@ export const GameCard = ({ round }: { round: Round }) => {
       const targetTime = round.status === 'active' ? round.endTime : round.startTime
       const endMs = Number(new Date(targetTime))
       const msLeft = Number.isFinite(endMs) ? Math.max(0, endMs - Date.now()) : 0
-      if (msLeft === 0 && (round.status === 'cooldown' || round.status === 'finished')) {
+      if (msLeft === 0 && (round.status === 'cooldown')) {
         return reloadPage()
       }
       setTimeLeft(formatMsToHHMMSS(msLeft))
